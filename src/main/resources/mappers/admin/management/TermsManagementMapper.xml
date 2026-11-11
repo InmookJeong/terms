@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.mook.terms.admin.management.persistence.TermsManagementMapper">
+	
+	<insert id="save" parameterType="Terms" useGeneratedKeys="true" keyProperty="termsId">
+		/** TermsManagementMapper.save */
+		INSERT INTO TERMS (
+            TITLE,
+            CONTENTS,
+            CONTENT_TYPE,
+            ORDER_NO,
+			USE_YN,
+			REQUIRE_YN,
+			CREATE_ID,
+			CREATE_DATE
+		) VALUES (
+			#{title},
+			#{contents},
+			#{contentType},
+			#{orderNo},
+			#{useYn},
+			#{requireYn},
+			#{createId},
+			#{createDate}
+		)
+	</insert>
+</mapper>
