@@ -1,5 +1,7 @@
 package kr.mook.terms.admin.management.api;
 
+import java.util.Locale;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -37,9 +39,9 @@ public class TermsManagementController {
      * @return 이용약관 정보 저장 결과 상태 코드 및 메시지, 이용약관 아이디 반환
      */
     @PostMapping
-    public ResponseEntity<TermsManagementResponseDto> saveTerms(@RequestBody TermsManagementRequestDto termsManagementRequestDto) {
+    public ResponseEntity<TermsManagementResponseDto> saveTerms(@RequestBody TermsManagementRequestDto termsManagementRequestDto, final Locale locale) {
         log.info("##### 이용약관 정보 저장 기능 실행.");
-        TermsManagementResponseDto termsManagementResponseDto = this.termsManagementService.saveTerms(termsManagementRequestDto);
+        TermsManagementResponseDto termsManagementResponseDto = this.termsManagementService.saveTerms(termsManagementRequestDto, locale);
         String statusCode = termsManagementResponseDto.getStatusCode();
 
         // 저장 실패

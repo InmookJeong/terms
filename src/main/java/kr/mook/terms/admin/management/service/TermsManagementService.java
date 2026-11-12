@@ -1,5 +1,7 @@
 package kr.mook.terms.admin.management.service;
 
+import java.util.Locale;
+
 import kr.mook.terms.admin.management.dto.TermsManagementRequestDto;
 import kr.mook.terms.admin.management.dto.TermsManagementResponseDto;
 
@@ -16,6 +18,7 @@ public interface TermsManagementService {
      * 이용약관 정보 저장을 위한 서비스
      * 
      * @param termsManagementRequestDto 관리자가 작성한 이용약관 정보
+     * @param locale 다국어 처리를 위한 언어 형식
      * @return 이용약관 정보 저장 결과 상태 코드 및 메시지, 이용약관 아이디 반환<br/>
      * {<br/>
      *      &emsp;"statusCode" : "200",<br/>
@@ -23,5 +26,5 @@ public interface TermsManagementService {
      *      &emsp;"termsId" : 1<br/>
      * }<br/>
      */
-    public TermsManagementResponseDto saveTerms(final TermsManagementRequestDto termsManagementRequestDto);
+    public TermsManagementResponseDto saveTerms(final TermsManagementRequestDto termsManagementRequestDto, final Locale locale);
 }

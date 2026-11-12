@@ -21,5 +21,13 @@ public interface TermsManagementMapper {
      * @return 저장된 이용약관 개수
      */
     public int save(Terms terms);
+
+    /**
+     * 사용자용 이용약관 검색 테이블에 사용중인 이용약관 정보 저장
+     * 
+     * @param terms 사용여부가 Y인 저장된 이용약관 정보
+     * @return 저장된 이용약관 개수
+     */
+    public int saveInTermsSearch(Terms terms);
     
 }

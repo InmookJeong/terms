@@ -1,12 +1,15 @@
 package kr.mook.terms.admin.management.service;
 
 import java.time.LocalDateTime;
+import java.util.Locale;
 
+import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Service;
 
 import kr.mook.terms.admin.management.dto.TermsManagementRequestDto;
 import kr.mook.terms.admin.management.dto.TermsManagementResponseDto;
 import kr.mook.terms.admin.management.persistence.TermsManagementMapper;
+import kr.mook.terms.admin.search.service.TermsSearchService;
 import kr.mook.terms.common.entity.Terms;
 import kr.mook.terms.common.util.TermsConverter;
 import lombok.RequiredArgsConstructor;
@@ -24,81 +27,109 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class TermsManagementServiceImpl implements TermsManagementService {
 
+    public final MessageSource messageSource;
     public final TermsManagementMapper termsManagementMapper;
+
+    public final TermsSearchService termsSearchService;
+
+    private final String _TERMS_ERROR_MESSAGE_PREFIX = "ERROR-TERMS-";
 
     /**
      * 이용약관 정보 저장 서비스 구현
      */
     @Override
-    public TermsManagementResponseDto saveTerms(final TermsManagementRequestDto termsManagementRequestDto) {
+    public TermsManagementResponseDto saveTerms(final TermsManagementRequestDto termsManagementRequestDto, final Locale locale) {
         log.info("##### 이용약관 정보 저장 서비스 실행.");
         log.info("##### 관리자가 작성한 이용약관 정보 : {}", termsManagementRequestDto);
 
-        // 저장될 이용약관 정보의 값이 적절한지 검증
-        TermsManagementResponseDto termsManagementResponseDto = TermsManagementResponseDto.builder().statusCode("200").build();
-        this._makeDataEmptyErrorResponse(termsManagementRequestDto, termsManagementResponseDto);
-        if(!"200".equals(termsManagementResponseDto.getStatusCode())) return termsManagementResponseDto;
+        // 저장될 이용약관 정보의 값이 적절한지 검증(빈 값, 잘못된 형식의 값, 이미 저장된 값 등)
+        String errorStatusCode = this._getErrorStatusCode(termsManagementRequestDto);
+        if(!"".equals(errorStatusCode))
+            return this._getErrorResponse(errorStatusCode, locale);
         
         // 데이터베이스에 저장하기 위해 Terms Entity로 변환
         Terms terms = TermsConverter.toTerms(termsManagementRequestDto);
-        log.info("##### 데이터베이스에 저장하기 위해 엔티티(Terms)로 변환 : {}", terms);
         terms.setCreateId(1L);
         terms.setCreateDate(LocalDateTime.now());
 
-        termsManagementMapper.save(terms);
-        log.info("##### 데이터베이스에 저장 후 엔티티(Terms) : {}", terms);
+        // 이용약관 저장, useYn이 Y인 경우에는 TERMS_SEARCH 테이블에도 저장
+        this.termsManagementMapper.save(terms);
+        if("Y".equals(terms.getUseYn())) this.termsManagementMapper.saveInTermsSearch(terms);
+        log.info("##### 이용약관 정보 저장 성공. TERMS_ID : {}", terms.getTermsId());
         
-        this._makeSuccessResponse(termsManagementResponseDto, terms);
-        return termsManagementResponseDto;
+        return this._getSuccessResponse(terms.getTermsId(), terms.getTitle(), "TERMS-SAVE", locale);
     }
 
     /**
-     * 전달된 이용약관 정보의 값이 모두 입력되었는지 점검 후 결과 데이터 반환
+     * 관리자가 작성한 이용약관 정보에 빈 값(EMPTY), 잘못된 형식의 값(NOT-VALID), 이미 저장된 값(DUPLICATION)이 있는지 확인하여 오류 상태 코드 반환<br/>
      * 
      * @param termsManagementRequestDto 관리자가 작성한 이용약관 정보
-     * @param termsManagementResponseDto 관리자가 작성한 이용약관 정보
+     * @return 오류 상태코드, 빈 값이 반환될 경우 오류가 없음을 의미
      */
-    private void _makeDataEmptyErrorResponse(final TermsManagementRequestDto termsManagementRequestDto, final TermsManagementResponseDto termsManagementResponseDto) {
-        StringBuilder message = new StringBuilder();
+    private String _getErrorStatusCode(final TermsManagementRequestDto termsManagementRequestDto) {
 
-        if(termsManagementRequestDto.getTitle() == null || "".equals(termsManagementRequestDto.getTitle())) {
-            message.append("이용약관의 제목을 입력해주세요.");
-        } else if(termsManagementRequestDto.getContents() == null || "".equals(termsManagementRequestDto.getContents())) {
-            message.append("이용약관의 내용을 입력해주세요.");
-        } else if(termsManagementRequestDto.getContentType() == null || "".equals(termsManagementRequestDto.getContentType())) {
-            message.append("이용약관 내용의 유형을 입력해주세요.");
-        } else if(termsManagementRequestDto.getOrderNo() == null || termsManagementRequestDto.getOrderNo().intValue() <= 0) {
-            message.append("이용약관 출력 순번을 입력해주세요. 출력 순번은 1 이상의 숫자입니다.");
-        } else if(termsManagementRequestDto.getUseYn() == null || "".equals(termsManagementRequestDto.getUseYn())) {
-            message.append("이용약관 사용 여부를 입력해주세요. 이용약관 사용 여부는 Y 또는 N를 입력할 수 있습니다.");
-        } else if(!"Y".equals(termsManagementRequestDto.getUseYn().toUpperCase()) && !"N".equals(termsManagementRequestDto.getUseYn().toUpperCase())) {
-            message.append("이용약관 사용 여부는 Y 또는 N만 입력할 수 있습니다.");
-        } else if(termsManagementRequestDto.getUseYn().length() > 1) {
-            message.append("이용약관 사용 여부는 Y 또는 N만 입력할 수 있습니다.");
-        } else if(termsManagementRequestDto.getRequireYn() == null || "".equals(termsManagementRequestDto.getRequireYn())) {
-            message.append("이용약관 필수 여부를 입력해주세요. 이용약관 필수 여부는 Y 또는 N를 입력할 수 있습니다.");
-        } else if(!"Y".equals(termsManagementRequestDto.getRequireYn().toUpperCase()) && !"N".equals(termsManagementRequestDto.getRequireYn().toUpperCase())) {
-            message.append("이용약관 필수 여부는 Y 또는 N만 입력할 수 있습니다.");
-        } else if(termsManagementRequestDto.getRequireYn().length() > 1) {
-            message.append("이용약관 필수 여부는 Y 또는 N만 입력할 수 있습니다.");
-        }
+        if(termsManagementRequestDto.getTitle() == null || "".equals(termsManagementRequestDto.getTitle()))
+            return "EMPTY-TITLE";
 
-        if("".equals(message.toString())) return;
+        if(termsManagementRequestDto.getContents() == null || "".equals(termsManagementRequestDto.getContents()))
+            return "EMPTY-CONTENTS";
+        
+        if(termsManagementRequestDto.getContentType() == null || "".equals(termsManagementRequestDto.getContentType()))
+            return "EMPTY-CONTENT-TYPE";
+        
+        if(termsManagementRequestDto.getOrderNo() == null || termsManagementRequestDto.getOrderNo().intValue() <= 0)
+            return "EMPTY-ORDER-NO";
+        
+        if(termsManagementRequestDto.getUseYn() == null || "".equals(termsManagementRequestDto.getUseYn()))
+            return "EMPTY-USE-YN";
+        
+        if(!"Y".equals(termsManagementRequestDto.getUseYn().toUpperCase()) && !"N".equals(termsManagementRequestDto.getUseYn().toUpperCase()))
+            return "NOT-VALID-USE-YN";
+        
+        if(termsManagementRequestDto.getRequireYn() == null || "".equals(termsManagementRequestDto.getRequireYn()))
+            return "EMPTY-REQUIRE-YN";
+        
+        if(!"Y".equals(termsManagementRequestDto.getRequireYn().toUpperCase()) && !"N".equals(termsManagementRequestDto.getRequireYn().toUpperCase()))
+            return "NOT-VALID-REQUIRE-YN";
 
-        termsManagementResponseDto.setStatusCode("400");
-        termsManagementResponseDto.setMessage(message.toString());
+        if(this.termsSearchService.duplicateTitle(termsManagementRequestDto.getTitle()))
+            return "DUPLICATE-TITLE";
+
+        if(this.termsSearchService.duplicateOrderNo(termsManagementRequestDto.getOrderNo()))
+            return "DUPLICATE-ORDER-NO";
+
+        return "";
     }
 
     /**
-     * 저장된 이용약관 정보(이용약관 아이디)와 저장 성공 메시지, 상태 코드를 반환할 수 있도록 데이터 등록
+     * 오류 메시지를 포함한 결과 반환
      * 
-     * @param termsManagementResponseDto 관리자에게 전달할 API 결과
-     * @param terms 저장된 이용약관 정보
+     * @param errorStatusCode 오류 상태 코드
+     * @param locale 다국어 처리를 위한 언어 형식
+     * @return 오류 메시지를 포함한 결과 반환
      */
-    private void _makeSuccessResponse(final TermsManagementResponseDto termsManagementResponseDto, final Terms terms) {
-        String message = "이용 약관 정보(" + terms.getTitle() + ")가 저장되었습니다.";
-        termsManagementResponseDto.setStatusCode("200");
-        termsManagementResponseDto.setMessage(message);
-        termsManagementResponseDto.setTermsId(terms.getTermsId());
+    private TermsManagementResponseDto _getErrorResponse(final String errorStatusCode, final Locale locale) {
+        String messageCode = _TERMS_ERROR_MESSAGE_PREFIX + errorStatusCode;
+        return TermsManagementResponseDto.builder()
+                                         .statusCode("400")
+                                         .message(this.messageSource.getMessage(messageCode, null, locale))
+                                         .termsId(0)
+                                         .build();
+    }
+
+    /**
+     * 저장/수정/삭제 성공에 대한 결과 반환
+     * 
+     * @param termsId 저장/수정 성공한 이용약관 아이디. 삭제의 경우 0이 전달됨
+     * @param title 저장/수정/삭제된 이용약관 제목
+     * @param locale 다국어 처리를 위한 언어 형식
+     * @return 저장/수정/삭제 성공에 대한 결과 반환
+     */
+    private TermsManagementResponseDto _getSuccessResponse(final long termsId, final String title, final String messageCode, final Locale locale) {
+        return TermsManagementResponseDto.builder()
+                                         .statusCode("200")
+                                         .message(this.messageSource.getMessage(messageCode, new String[] {title}, locale))
+                                         .termsId(termsId)
+                                         .build();
     }
 }

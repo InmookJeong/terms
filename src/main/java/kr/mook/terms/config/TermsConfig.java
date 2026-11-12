@@ -10,6 +10,13 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 
+/**
+ * 데이터 영속성을 위한 구성(Configuration)
+ * 
+ * @version v.1.0
+ * @since 2026.11.11
+ * @author Jeong, Inmook
+ */
 @Configuration
 @MapperScan(basePackages = "kr.mook.terms.**.persistence")
 public class TermsConfig {

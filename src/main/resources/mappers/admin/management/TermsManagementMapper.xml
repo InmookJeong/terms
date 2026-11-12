@@ -27,4 +27,23 @@
 			#{createDate}
 		)
 	</insert>
+
+	<insert id="saveInTermsSearch" parameterType="Terms">
+		/** TermsManagementMapper.save */
+		INSERT INTO TERMS_SEARCH (
+			TERMS_ID,
+            TITLE,
+            CONTENTS,
+            CONTENT_TYPE,
+            ORDER_NO,
+			REQUIRE_YN
+		) VALUES (
+			#{termsId},
+			#{title},
+			#{contents},
+			#{contentType},
+			#{orderNo},
+			#{requireYn}
+		)
+	</insert>
 </mapper>
