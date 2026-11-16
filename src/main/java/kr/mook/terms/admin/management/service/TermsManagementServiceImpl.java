@@ -3,14 +3,17 @@ package kr.mook.terms.admin.management.service;
 import java.time.LocalDateTime;
 import java.util.Locale;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import kr.mook.terms.admin.management.dto.TermsManagementRequestDto;
 import kr.mook.terms.admin.management.dto.TermsManagementResponseDto;
 import kr.mook.terms.admin.management.persistence.TermsManagementMapper;
 import kr.mook.terms.admin.search.service.TermsSearchService;
 import kr.mook.terms.common.entity.Terms;
+import kr.mook.terms.common.event.TermsEvent;
 import kr.mook.terms.common.util.TermsConverter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,16 +30,20 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class TermsManagementServiceImpl implements TermsManagementService {
 
-    public final MessageSource messageSource;
-    public final TermsManagementMapper termsManagementMapper;
+    private final MessageSource messageSource;
+    private final TermsManagementMapper termsManagementMapper;
 
-    public final TermsSearchService termsSearchService;
+    private final TermsSearchService termsSearchService;
+
+    private final ApplicationEventPublisher eventPublisher;
 
     private final String _TERMS_ERROR_MESSAGE_PREFIX = "ERROR-TERMS-";
+    private final String _SAVE_PUBLISH_STATUS = "I";
 
     /**
      * 이용약관 정보 저장 서비스 구현
      */
+    @Transactional
     @Override
     public TermsManagementResponseDto saveTerms(final TermsManagementRequestDto termsManagementRequestDto, final Locale locale) {
         log.info("##### 이용약관 정보 저장 서비스 실행.");
@@ -56,6 +63,9 @@ public class TermsManagementServiceImpl implements TermsManagementService {
         this.termsManagementMapper.save(terms);
         if("Y".equals(terms.getUseYn())) this.termsManagementMapper.saveInTermsSearch(terms);
         log.info("##### 이용약관 정보 저장 성공. TERMS_ID : {}", terms.getTermsId());
+
+        // 이용약관 저장 성공 결과 외부 전송
+        this._termsEventPublisher(terms, this._SAVE_PUBLISH_STATUS);
         
         return this._getSuccessResponse(terms.getTermsId(), terms.getTitle(), "TERMS-SAVE", locale);
     }
@@ -109,7 +119,7 @@ public class TermsManagementServiceImpl implements TermsManagementService {
      * @return 오류 메시지를 포함한 결과 반환
      */
     private TermsManagementResponseDto _getErrorResponse(final String errorStatusCode, final Locale locale) {
-        String messageCode = _TERMS_ERROR_MESSAGE_PREFIX + errorStatusCode;
+        String messageCode = this._TERMS_ERROR_MESSAGE_PREFIX + errorStatusCode;
         return TermsManagementResponseDto.builder()
                                          .statusCode("400")
                                          .message(this.messageSource.getMessage(messageCode, null, locale))
@@ -131,5 +141,16 @@ public class TermsManagementServiceImpl implements TermsManagementService {
                                          .message(this.messageSource.getMessage(messageCode, new String[] {title}, locale))
                                          .termsId(termsId)
                                          .build();
+    }
+
+    /**
+     * 이용약관 관리(저장/수정/삭제) 결과 전송
+     * 
+     * @param terms
+     * @param status
+     */
+    private void _termsEventPublisher(final Terms terms, final String status) {
+        TermsEvent event = new TermsEvent(terms, status);
+        eventPublisher.publishEvent(event);
     }
 }
