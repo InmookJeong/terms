@@ -6,14 +6,17 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import kr.mook.terms.admin.management.dto.TermsManagementRequestDto;
 import kr.mook.terms.admin.management.dto.TermsManagementResponseDto;
 import kr.mook.terms.admin.management.service.TermsManagementService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 
 
 /**
@@ -36,6 +39,7 @@ public class TermsManagementController {
      * 이용약관 정보 저장을 위한 API
      * 
      * @param termsManagementRequestDto 관리자가 작성한 이용약관 정보
+     * @param locale 다국어 처리를 위한 언어 형식
      * @return 이용약관 정보 저장 결과 상태 코드 및 메시지, 이용약관 아이디 반환
      */
     @PostMapping
@@ -53,6 +57,30 @@ public class TermsManagementController {
             return ResponseEntity.internalServerError().body(termsManagementResponseDto);
 
         // 저장 성공
+        return ResponseEntity.ok(termsManagementResponseDto);
+    }
+
+    /**
+     * 이용약관 정보 수정을 위한 API
+     * 
+     * @param termsManagementRequestDto 관리자가 작성한 이용약관 정보
+     * @param locale 다국어 처리를 위한 언어 형식
+     * @return 이용약관 정보 수정 결과 상태 코드 및 메시지, 이용약관 아이디 반환
+     */
+    @PutMapping("/{id}")
+    public ResponseEntity<TermsManagementResponseDto> updateTerms(@PathVariable("id") long termsId, @RequestBody TermsManagementRequestDto termsManagementRequestDto, final Locale locale) {
+        TermsManagementResponseDto termsManagementResponseDto = this.termsManagementService.updateTerms(termsId, termsManagementRequestDto, locale);
+        String statusCode = termsManagementResponseDto.getStatusCode();
+
+        // 저장 실패
+        if("400".equals(statusCode))
+            return ResponseEntity.badRequest().body(termsManagementResponseDto);
+
+        // 저장 과정에서 서버 오류 발생
+        if("500".equals(statusCode))
+            return ResponseEntity.internalServerError().body(termsManagementResponseDto);
+
+        // 수정 성공
         return ResponseEntity.ok(termsManagementResponseDto);
     }
 }

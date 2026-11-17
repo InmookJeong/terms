@@ -39,6 +39,8 @@ public class TermsManagementServiceImpl implements TermsManagementService {
 
     private final String _TERMS_ERROR_MESSAGE_PREFIX = "ERROR-TERMS-";
     private final String _SAVE_PUBLISH_STATUS = "I";
+    private final String _UPDATE_PUBLISH_STATUS = "U";
+    private final String _DELETE_PUBLISH_STATUS = "D";
 
     /**
      * 이용약관 정보 저장 서비스 구현
@@ -50,7 +52,7 @@ public class TermsManagementServiceImpl implements TermsManagementService {
         log.info("##### 관리자가 작성한 이용약관 정보 : {}", termsManagementRequestDto);
 
         // 저장될 이용약관 정보의 값이 적절한지 검증(빈 값, 잘못된 형식의 값, 이미 저장된 값 등)
-        String errorStatusCode = this._getErrorStatusCode(termsManagementRequestDto);
+        String errorStatusCode = this._getErrorStatusCode(termsManagementRequestDto, 0);
         if(!"".equals(errorStatusCode))
             return this._getErrorResponse(errorStatusCode, locale);
         
@@ -71,12 +73,61 @@ public class TermsManagementServiceImpl implements TermsManagementService {
     }
 
     /**
+     * 이용약관 정보 수정 서비스 구현
+     */
+    @Transactional
+    @Override
+    public TermsManagementResponseDto updateTerms(final long termsId, final TermsManagementRequestDto termsManagementRequestDto, final Locale locale) {
+        log.info("##### 관리자가 수정한 termsId : {}, 이용약관 정보 : {}", termsId, termsManagementRequestDto);
+
+        // 저장된 이용약관 정보가 없는 경우 오류 메시지 출력
+        if(!this.termsSearchService.exists(termsId))
+            return this._getErrorResponse("NOT-EXISTS", locale);
+
+        // 저장될 이용약관 정보의 값이 적절한지 검증(빈 값, 잘못된 형식의 값, 이미 저장된 값 등)
+        String errorStatusCode = this._getErrorStatusCode(termsManagementRequestDto, termsId);
+        if(!"".equals(errorStatusCode))
+            return this._getErrorResponse(errorStatusCode, locale);
+
+        // 데이터베이스에 저장하기 위해 Terms Entity로 변환
+        Terms terms = TermsConverter.toTerms(termsManagementRequestDto);
+        terms.setTermsId(termsId);
+        terms.setUpdateId(1L);
+        terms.setUpdateDate(LocalDateTime.now());
+
+        // 이용약관 수정
+        this.termsManagementMapper.update(terms);
+        
+        String eventStatus = "";
+        boolean hasTerms = this.termsSearchService.existsInSearch(terms.getTermsId());
+        boolean useTerms = "Y".equalsIgnoreCase(terms.getUseYn());
+        if(hasTerms && useTerms) {
+            // TERMS_SEARCH 테이블에 이미 저장되어 있고, 사용여부가 Y인 경우 TERMS_SEARCH에 데이터 수정
+            this.termsManagementMapper.updateInTermsSearch(terms);
+            eventStatus = this._UPDATE_PUBLISH_STATUS;
+        } else if(hasTerms && !useTerms) {
+            // TERMS_SEARCH 테이블에 이미 저장되어 있고, 사용여부가 N인 경우 TERMS_SEARCH에 데이터 삭제
+            this.termsManagementMapper.deleteInTermsSearch(terms.getTermsId());
+            eventStatus = this._DELETE_PUBLISH_STATUS;
+        } else if(!hasTerms && useTerms) {
+            // TERMS_SEARCH 테이블에 저장되어 있지 않고, 사용여부가 Y인 경우 TERMS_SEARCH에 데이터 저장
+            this.termsManagementMapper.saveInTermsSearch(terms);
+            eventStatus = this._SAVE_PUBLISH_STATUS;
+        }
+
+        // 이용약관 수정 성공 결과 외부 전송
+        this._termsEventPublisher(terms, eventStatus);
+
+        return this._getSuccessResponse(terms.getTermsId(), terms.getTitle(), "TERMS-UPDATE", locale);
+    }
+
+    /**
      * 관리자가 작성한 이용약관 정보에 빈 값(EMPTY), 잘못된 형식의 값(NOT-VALID), 이미 저장된 값(DUPLICATION)이 있는지 확인하여 오류 상태 코드 반환<br/>
      * 
      * @param termsManagementRequestDto 관리자가 작성한 이용약관 정보
      * @return 오류 상태코드, 빈 값이 반환될 경우 오류가 없음을 의미
      */
-    private String _getErrorStatusCode(final TermsManagementRequestDto termsManagementRequestDto) {
+    private String _getErrorStatusCode(final TermsManagementRequestDto termsManagementRequestDto, long termsId) {
 
         if(termsManagementRequestDto.getTitle() == null || "".equals(termsManagementRequestDto.getTitle()))
             return "EMPTY-TITLE";
@@ -102,10 +153,10 @@ public class TermsManagementServiceImpl implements TermsManagementService {
         if(!"Y".equals(termsManagementRequestDto.getRequireYn().toUpperCase()) && !"N".equals(termsManagementRequestDto.getRequireYn().toUpperCase()))
             return "NOT-VALID-REQUIRE-YN";
 
-        if(this.termsSearchService.duplicateTitle(termsManagementRequestDto.getTitle()))
+        if(this.termsSearchService.duplicateTitle(termsManagementRequestDto.getTitle(), termsId))
             return "DUPLICATE-TITLE";
 
-        if(this.termsSearchService.duplicateOrderNo(termsManagementRequestDto.getOrderNo()))
+        if(this.termsSearchService.duplicateOrderNo(termsManagementRequestDto.getOrderNo(), termsId))
             return "DUPLICATE-ORDER-NO";
 
         return "";

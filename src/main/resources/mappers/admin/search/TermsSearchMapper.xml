@@ -5,7 +5,27 @@
 
 <mapper namespace="kr.mook.terms.admin.search.persistence.TermsSearchMapper">
 	
-	<select id="countByTitle" parameterType="String" resultType="int">
+	<select id="countByTermsId" parameterType="long" resultType="int">
+		/** TermsSearchMapper.countByTermsId */
+		SELECT
+            COUNT(TERMS_ID)
+        FROM
+            TERMS
+        WHERE
+            TERMS_ID = #{termsId}
+	</select>
+
+	<select id="countTermsSearchByTermsId" parameterType="long" resultType="int">
+		/** TermsSearchMapper.countByTermsId */
+		SELECT
+            COUNT(TERMS_ID)
+        FROM
+            TERMS_SEARCH
+        WHERE
+            TERMS_ID = #{termsId}
+	</select>
+
+	<select id="countByTitle" parameterType="hashmap" resultType="int">
 		/** TermsSearchMapper.countByTitle */
 		SELECT
             COUNT(TERMS_ID)
@@ -13,9 +33,14 @@
             TERMS
         WHERE
             TITLE = #{title}
+            <if test="termsId > 0">
+            <![CDATA[
+            AND TERMS_ID <> #{termsId}
+            ]]>
+            </if>
 	</select>
 
-	<select id="countByOrderNo" parameterType="int" resultType="int">
+	<select id="countByOrderNo" parameterType="hashmap" resultType="int">
 		/** TermsSearchMapper.countByOrderNo */
 		SELECT
             COUNT(TERMS_ID)
@@ -24,5 +49,10 @@
         WHERE
             USE_YN = 'Y'
             AND ORDER_NO = #{orderNo}
+            <if test="termsId > 0">
+            <![CDATA[
+            AND TERMS_ID <> #{termsId}
+            ]]>
+            </if>
 	</select>
 </mapper>

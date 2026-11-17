@@ -3,6 +3,7 @@ package kr.mook.terms.admin.management.dto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * 이용약관 관리(저장/수정)를 위한 DTO
@@ -12,6 +13,7 @@ import lombok.Data;
  * @author Jeong, Inmook
  */
 @Data
+@NoArgsConstructor 
 @AllArgsConstructor
 public class TermsManagementRequestDto {
 

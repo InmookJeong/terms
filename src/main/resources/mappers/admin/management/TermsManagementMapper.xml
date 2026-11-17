@@ -28,8 +28,24 @@
 		)
 	</insert>
 
+	<update id="update" parameterType="Terms">
+		/** TermsManagementMapper.update */
+		UPDATE TERMS
+		SET
+			TITLE = #{title},
+            CONTENTS = #{contents},
+            CONTENT_TYPE = #{contentType},
+            ORDER_NO = #{orderNo},
+			USE_YN = #{useYn},
+			REQUIRE_YN = #{requireYn},
+			UPDATE_ID = #{updateId},
+			UPDATE_DATE = #{updateDate}
+		WHERE
+			TERMS_ID = #{termsId}
+	</update>
+
 	<insert id="saveInTermsSearch" parameterType="Terms">
-		/** TermsManagementMapper.save */
+		/** TermsManagementMapper.saveInTermsSearch */
 		INSERT INTO TERMS_SEARCH (
 			TERMS_ID,
             TITLE,
@@ -46,4 +62,24 @@
 			#{requireYn}
 		)
 	</insert>
+
+	<update id="updateInTermsSearch" parameterType="Terms">
+		/** TermsManagementMapper.updateInTermsSearch */
+		UPDATE TERMS_SEARCH
+		SET
+			TITLE = #{title},
+            CONTENTS = #{contents},
+            CONTENT_TYPE = #{contentType},
+            ORDER_NO = #{orderNo},
+			REQUIRE_YN = #{requireYn}
+		WHERE
+			TERMS_ID = #{termsId}
+	</update>
+
+	<delete id="deleteInTermsSearch" parameterType="long">
+		/** TermsManagementMapper.updateInTermsSearch */
+		DELETE FROM TERMS_SEARCH
+		WHERE
+			TERMS_ID = #{termsId}
+	</delete>
 </mapper>

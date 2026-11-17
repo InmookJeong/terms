@@ -23,11 +23,36 @@ public interface TermsManagementMapper {
     public int save(Terms terms);
 
     /**
+     * 
+     * 이용약관 정보 수정
+     * 
+     * @param terms 수정할 이용약관 정보
+     * @return 저장된 이용약관 개수
+     */
+    public int update(Terms terms);
+
+    /**
      * 사용자용 이용약관 검색 테이블에 사용중인 이용약관 정보 저장
      * 
      * @param terms 사용여부가 Y인 저장된 이용약관 정보
      * @return 저장된 이용약관 개수
      */
     public int saveInTermsSearch(Terms terms);
+
+    /**
+     * 사용자용 이용약관 검색 테이블에 사용중인 이용약관 정보 수정
+     * 
+     * @param terms 사용여부가 Y인 수정된 이용약관 정보
+     * @return 수정된 이용약관 개수
+     */
+    public int updateInTermsSearch(Terms terms);
+
+    /**
+     * 사용자용 이용약관 검색 테이블에 사용중인 이용약관 정보 삭제
+     * 
+     * @param termsId 사용여부가 N인 삭제 대상 이용약관 아이디
+     * @return 삭제된 이용약관 개수
+     */
+    public int deleteInTermsSearch(long termsId);
     
 }
