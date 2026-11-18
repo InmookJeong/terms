@@ -11,6 +11,8 @@ import org.springframework.transaction.annotation.Transactional;
 import kr.mook.terms.admin.management.dto.TermsManagementRequestDto;
 import kr.mook.terms.admin.management.dto.TermsManagementResponseDto;
 import kr.mook.terms.admin.management.persistence.TermsManagementMapper;
+import kr.mook.terms.admin.management.util.TermsRequestValueChecker;
+import kr.mook.terms.admin.management.util.TermsResponseMaker;
 import kr.mook.terms.admin.search.service.TermsSearchService;
 import kr.mook.terms.common.entity.Terms;
 import kr.mook.terms.common.event.TermsEvent;
@@ -48,7 +50,6 @@ public class TermsManagementServiceImpl implements TermsManagementService {
     @Transactional
     @Override
     public TermsManagementResponseDto saveTerms(final TermsManagementRequestDto termsManagementRequestDto, final Locale locale) {
-        log.info("##### 이용약관 정보 저장 서비스 실행.");
         log.info("##### 관리자가 작성한 이용약관 정보 : {}", termsManagementRequestDto);
 
         // 저장될 이용약관 정보의 값이 적절한지 검증(빈 값, 잘못된 형식의 값, 이미 저장된 값 등)
@@ -61,10 +62,12 @@ public class TermsManagementServiceImpl implements TermsManagementService {
         terms.setCreateId(1L);
         terms.setCreateDate(LocalDateTime.now());
 
-        // 이용약관 저장, useYn이 Y인 경우에는 TERMS_SEARCH 테이블에도 저장
+        // 이용약관 저장
         this.termsManagementMapper.save(terms);
-        if("Y".equals(terms.getUseYn())) this.termsManagementMapper.saveInTermsSearch(terms);
         log.info("##### 이용약관 정보 저장 성공. TERMS_ID : {}", terms.getTermsId());
+
+        // 사용자 조회용 이용약관 테이블에도 데이터 저장
+        this._saveUserTermsSearchHandler(terms);
 
         // 이용약관 저장 성공 결과 외부 전송
         this._termsEventPublisher(terms, this._SAVE_PUBLISH_STATUS);
@@ -98,27 +101,46 @@ public class TermsManagementServiceImpl implements TermsManagementService {
         // 이용약관 수정
         this.termsManagementMapper.update(terms);
         
-        String eventStatus = "";
-        boolean hasTerms = this.termsSearchService.existsInSearch(terms.getTermsId());
-        boolean useTerms = "Y".equalsIgnoreCase(terms.getUseYn());
-        if(hasTerms && useTerms) {
-            // TERMS_SEARCH 테이블에 이미 저장되어 있고, 사용여부가 Y인 경우 TERMS_SEARCH에 데이터 수정
-            this.termsManagementMapper.updateInTermsSearch(terms);
-            eventStatus = this._UPDATE_PUBLISH_STATUS;
-        } else if(hasTerms && !useTerms) {
-            // TERMS_SEARCH 테이블에 이미 저장되어 있고, 사용여부가 N인 경우 TERMS_SEARCH에 데이터 삭제
-            this.termsManagementMapper.deleteInTermsSearch(terms.getTermsId());
-            eventStatus = this._DELETE_PUBLISH_STATUS;
-        } else if(!hasTerms && useTerms) {
-            // TERMS_SEARCH 테이블에 저장되어 있지 않고, 사용여부가 Y인 경우 TERMS_SEARCH에 데이터 저장
-            this.termsManagementMapper.saveInTermsSearch(terms);
-            eventStatus = this._SAVE_PUBLISH_STATUS;
-        }
+        // 사용자 조회용 이용약관 테이블에도 데이터 저장/수정/삭제
+        this._updateUserTermsSearchHandler(terms);
 
         // 이용약관 수정 성공 결과 외부 전송
-        this._termsEventPublisher(terms, eventStatus);
+        this._termsEventPublisher(terms, this._UPDATE_PUBLISH_STATUS);
 
         return this._getSuccessResponse(terms.getTermsId(), terms.getTitle(), "TERMS-UPDATE", locale);
+    }
+
+    /**
+     * 사용자 조회용 이용약관 테이블에도 데이터 저장
+     * 
+     * @param terms
+     */
+    private void _saveUserTermsSearchHandler(final Terms terms) {
+        // useYn이 Y인 경우에는 TERMS_SEARCH 테이블에도 저장
+        if("Y".equals(terms.getUseYn()))
+            this.termsManagementMapper.saveUserTermsSearch(terms);
+    }
+
+    /**
+     * 사용자 조회용 이용약관 테이블에도 데이터 수정
+     * 
+     * @param terms
+     */
+    private void _updateUserTermsSearchHandler(final Terms terms) {
+        boolean hasTerms = this.termsSearchService.existsUserTermsSearch(terms.getTermsId());
+        boolean useTerms = "Y".equalsIgnoreCase(terms.getUseYn());
+
+        // TERMS_SEARCH 테이블에 이미 저장되어 있고, 사용여부가 Y인 경우 TERMS_SEARCH에 데이터 수정
+        if(hasTerms && useTerms)
+            this.termsManagementMapper.updateUserTermsSearch(terms);
+        
+        // TERMS_SEARCH 테이블에 이미 저장되어 있고, 사용여부가 N인 경우 TERMS_SEARCH에 데이터 삭제
+        if(hasTerms && !useTerms)
+            this.termsManagementMapper.deleteUserTermsSearch(terms.getTermsId());
+        
+        // TERMS_SEARCH 테이블에 저장되어 있지 않고, 사용여부가 Y인 경우 TERMS_SEARCH에 데이터 저장
+        if(!hasTerms && useTerms)
+            this.termsManagementMapper.saveUserTermsSearch(terms);
     }
 
     /**
@@ -129,34 +151,14 @@ public class TermsManagementServiceImpl implements TermsManagementService {
      */
     private String _getErrorStatusCode(final TermsManagementRequestDto termsManagementRequestDto, long termsId) {
 
-        if(termsManagementRequestDto.getTitle() == null || "".equals(termsManagementRequestDto.getTitle()))
-            return "EMPTY-TITLE";
-
-        if(termsManagementRequestDto.getContents() == null || "".equals(termsManagementRequestDto.getContents()))
-            return "EMPTY-CONTENTS";
-        
-        if(termsManagementRequestDto.getContentType() == null || "".equals(termsManagementRequestDto.getContentType()))
-            return "EMPTY-CONTENT-TYPE";
-        
-        if(termsManagementRequestDto.getOrderNo() == null || termsManagementRequestDto.getOrderNo().intValue() <= 0)
-            return "EMPTY-ORDER-NO";
-        
-        if(termsManagementRequestDto.getUseYn() == null || "".equals(termsManagementRequestDto.getUseYn()))
-            return "EMPTY-USE-YN";
-        
-        if(!"Y".equals(termsManagementRequestDto.getUseYn().toUpperCase()) && !"N".equals(termsManagementRequestDto.getUseYn().toUpperCase()))
-            return "NOT-VALID-USE-YN";
-        
-        if(termsManagementRequestDto.getRequireYn() == null || "".equals(termsManagementRequestDto.getRequireYn()))
-            return "EMPTY-REQUIRE-YN";
-        
-        if(!"Y".equals(termsManagementRequestDto.getRequireYn().toUpperCase()) && !"N".equals(termsManagementRequestDto.getRequireYn().toUpperCase()))
-            return "NOT-VALID-REQUIRE-YN";
+        String errorStatusCode = TermsRequestValueChecker.getErrorStatusCode(termsManagementRequestDto, termsId);
+        if(!errorStatusCode.isBlank()) return errorStatusCode;
 
         if(this.termsSearchService.duplicateTitle(termsManagementRequestDto.getTitle(), termsId))
             return "DUPLICATE-TITLE";
 
-        if(this.termsSearchService.duplicateOrderNo(termsManagementRequestDto.getOrderNo(), termsId))
+        String useYn = termsManagementRequestDto.getUseYn();
+        if("Y".equalsIgnoreCase(useYn) && this.termsSearchService.duplicateOrderNo(termsManagementRequestDto.getOrderNo(), termsId))
             return "DUPLICATE-ORDER-NO";
 
         return "";
@@ -165,33 +167,28 @@ public class TermsManagementServiceImpl implements TermsManagementService {
     /**
      * 오류 메시지를 포함한 결과 반환
      * 
-     * @param errorStatusCode 오류 상태 코드
+     * @param statusCode 오류 상태 코드
      * @param locale 다국어 처리를 위한 언어 형식
      * @return 오류 메시지를 포함한 결과 반환
      */
-    private TermsManagementResponseDto _getErrorResponse(final String errorStatusCode, final Locale locale) {
-        String messageCode = this._TERMS_ERROR_MESSAGE_PREFIX + errorStatusCode;
-        return TermsManagementResponseDto.builder()
-                                         .statusCode("400")
-                                         .message(this.messageSource.getMessage(messageCode, null, locale))
-                                         .termsId(0)
-                                         .build();
+    private TermsManagementResponseDto _getErrorResponse(final String statusCode, final Locale locale) {
+        String messageCode = this._TERMS_ERROR_MESSAGE_PREFIX + statusCode;
+        String message = this.messageSource.getMessage(messageCode, null, locale);
+        return TermsResponseMaker.getErrorResponse(message, locale);
     }
 
     /**
      * 저장/수정/삭제 성공에 대한 결과 반환
      * 
      * @param termsId 저장/수정 성공한 이용약관 아이디. 삭제의 경우 0이 전달됨
-     * @param title 저장/수정/삭제된 이용약관 제목
+     * @param title 이용약관 제목
+     * @param statusCode 저장/수정/삭제 상태 코드
      * @param locale 다국어 처리를 위한 언어 형식
      * @return 저장/수정/삭제 성공에 대한 결과 반환
      */
-    private TermsManagementResponseDto _getSuccessResponse(final long termsId, final String title, final String messageCode, final Locale locale) {
-        return TermsManagementResponseDto.builder()
-                                         .statusCode("200")
-                                         .message(this.messageSource.getMessage(messageCode, new String[] {title}, locale))
-                                         .termsId(termsId)
-                                         .build();
+    private TermsManagementResponseDto _getSuccessResponse(final long termsId, final String title, final String statusCode, final Locale locale) {
+        String message = this.messageSource.getMessage(statusCode, new String[] {title}, locale);
+        return TermsResponseMaker.getSuccessResponse(termsId, message, locale);
     }
 
     /**

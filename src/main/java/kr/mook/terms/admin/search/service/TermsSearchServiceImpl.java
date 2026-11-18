@@ -32,7 +32,7 @@ public class TermsSearchServiceImpl implements TermsSearchService {
      * 이용약관 정보가 이용약관 조회 테이블에 저장되어 있는지 확인
      */
     @Override
-    public boolean existsInSearch(final long termsId) {
+    public boolean existsUserTermsSearch(final long termsId) {
         return this.termsSearchMapper.countTermsSearchByTermsId(termsId) > 0;
     }
 

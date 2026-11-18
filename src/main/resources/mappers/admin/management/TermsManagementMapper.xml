@@ -44,8 +44,8 @@
 			TERMS_ID = #{termsId}
 	</update>
 
-	<insert id="saveInTermsSearch" parameterType="Terms">
-		/** TermsManagementMapper.saveInTermsSearch */
+	<insert id="saveUserTermsSearch" parameterType="Terms">
+		/** TermsManagementMapper.saveUserTermsSearch */
 		INSERT INTO TERMS_SEARCH (
 			TERMS_ID,
             TITLE,
@@ -63,8 +63,8 @@
 		)
 	</insert>
 
-	<update id="updateInTermsSearch" parameterType="Terms">
-		/** TermsManagementMapper.updateInTermsSearch */
+	<update id="updateUserTermsSearch" parameterType="Terms">
+		/** TermsManagementMapper.updateUserTermsSearch */
 		UPDATE TERMS_SEARCH
 		SET
 			TITLE = #{title},
@@ -76,8 +76,8 @@
 			TERMS_ID = #{termsId}
 	</update>
 
-	<delete id="deleteInTermsSearch" parameterType="long">
-		/** TermsManagementMapper.updateInTermsSearch */
+	<delete id="deleteUserTermsSearch" parameterType="long">
+		/** TermsManagementMapper.deleteUserTermsSearch */
 		DELETE FROM TERMS_SEARCH
 		WHERE
 			TERMS_ID = #{termsId}

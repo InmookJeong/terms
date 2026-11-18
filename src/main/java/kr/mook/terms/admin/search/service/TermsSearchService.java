@@ -23,7 +23,7 @@ public interface TermsSearchService {
      * @param termsId 이용약관 아이디
      * @return 데이터가 있을 경우 true, 없을 경우 false 반환
      */
-    public boolean existsInSearch(final long termsId);
+    public boolean existsUserTermsSearch(final long termsId);
 
     /**
      * 이용약관 제목이 중복되었는지 점검<br/>

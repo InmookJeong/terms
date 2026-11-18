@@ -46,18 +46,7 @@ public class TermsManagementController {
     public ResponseEntity<TermsManagementResponseDto> saveTerms(@RequestBody TermsManagementRequestDto termsManagementRequestDto, final Locale locale) {
         log.info("##### 이용약관 정보 저장 기능 실행.");
         TermsManagementResponseDto termsManagementResponseDto = this.termsManagementService.saveTerms(termsManagementRequestDto, locale);
-        String statusCode = termsManagementResponseDto.getStatusCode();
-
-        // 저장 실패
-        if("400".equals(statusCode))
-            return ResponseEntity.badRequest().body(termsManagementResponseDto);
-
-        // 저장 과정에서 서버 오류 발생
-        if("500".equals(statusCode))
-            return ResponseEntity.internalServerError().body(termsManagementResponseDto);
-
-        // 저장 성공
-        return ResponseEntity.ok(termsManagementResponseDto);
+        return this._getResponseEntity(termsManagementResponseDto);
     }
 
     /**
@@ -69,14 +58,25 @@ public class TermsManagementController {
      */
     @PutMapping("/{id}")
     public ResponseEntity<TermsManagementResponseDto> updateTerms(@PathVariable("id") long termsId, @RequestBody TermsManagementRequestDto termsManagementRequestDto, final Locale locale) {
+        log.info("##### 이용약관 정보 수정 기능 실행.");
         TermsManagementResponseDto termsManagementResponseDto = this.termsManagementService.updateTerms(termsId, termsManagementRequestDto, locale);
+        return this._getResponseEntity(termsManagementResponseDto);
+    }
+
+    /**
+     * 상태코드에 따른 결과 반환 객체 생성
+     * 
+     * @param termsManagementResponseDto
+     * @return
+     */
+    private ResponseEntity<TermsManagementResponseDto> _getResponseEntity(final TermsManagementResponseDto termsManagementResponseDto) {
         String statusCode = termsManagementResponseDto.getStatusCode();
 
         // 저장 실패
         if("400".equals(statusCode))
             return ResponseEntity.badRequest().body(termsManagementResponseDto);
 
-        // 저장 과정에서 서버 오류 발생
+        // 처리 과정에서 서버 오류 발생
         if("500".equals(statusCode))
             return ResponseEntity.internalServerError().body(termsManagementResponseDto);
 
