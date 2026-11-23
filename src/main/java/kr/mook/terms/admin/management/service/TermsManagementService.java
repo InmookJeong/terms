@@ -42,4 +42,18 @@ public interface TermsManagementService {
      * }<br/>
      */
     public TermsManagementResponseDto updateTerms(final long termsId, final TermsManagementRequestDto termsManagementRequestDto, final Locale locale);
+
+    /**
+     * 이용약관 정보 삭제를 위한 서비스
+     * 
+     * @param termsId 삭제할 이용약관 정보 아이디
+     * @param locale 다국어 처리를 위한 언어 형식
+     * @return 이용약관 정보 삭제 결과 상태 코드 및 메시지<br/>
+     * {<br/>
+     *      &emsp;"statusCode" : "200",<br/>
+     *      &emsp;"message" : "이용약관을 삭제하였습니다.",<br/>
+     *      &emsp;"termsId" : 0<br/>
+     * }<br/>
+     */
+    public TermsManagementResponseDto deleteTerms(final long termsId, final Locale locale);
 }

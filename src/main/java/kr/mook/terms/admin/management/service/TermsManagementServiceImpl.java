@@ -111,6 +111,30 @@ public class TermsManagementServiceImpl implements TermsManagementService {
     }
 
     /**
+     * 이용약관 정보 삭제 서비스 구현
+     */
+    @Transactional 
+    @Override
+    public TermsManagementResponseDto deleteTerms(long termsId, Locale locale) {
+        log.info("##### 관리자가 삭제한 termsId : {}", termsId);
+        if(!this.termsSearchService.exists(termsId))
+            return this._getErrorResponse("NOT-EXISTS", locale);
+
+        // 이용약관 삭제
+        this.termsManagementMapper.delete(termsId);
+        
+        // 사용자 조회용 이용약관 테이블에도 데이터 삭제
+        if(this.termsSearchService.existsUserTermsSearch(termsId))
+            this.termsManagementMapper.deleteUserTermsSearch(termsId);
+
+        // 이용약관 삭제 성공 결과 외부 전송
+        Terms terms = Terms.builder().termsId(termsId).build();
+        this._termsEventPublisher(terms, this._DELETE_PUBLISH_STATUS);
+
+        return this._getSuccessResponse(termsId, "", "TERMS-DELETE", locale);
+    }
+
+    /**
      * 사용자 조회용 이용약관 테이블에도 데이터 저장
      * 
      * @param terms

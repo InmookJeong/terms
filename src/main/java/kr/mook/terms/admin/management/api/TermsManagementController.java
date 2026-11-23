@@ -13,6 +13,7 @@ import kr.mook.terms.admin.management.service.TermsManagementService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -60,6 +61,13 @@ public class TermsManagementController {
     public ResponseEntity<TermsManagementResponseDto> updateTerms(@PathVariable("id") long termsId, @RequestBody TermsManagementRequestDto termsManagementRequestDto, final Locale locale) {
         log.info("##### 이용약관 정보 수정 기능 실행.");
         TermsManagementResponseDto termsManagementResponseDto = this.termsManagementService.updateTerms(termsId, termsManagementRequestDto, locale);
+        return this._getResponseEntity(termsManagementResponseDto);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<TermsManagementResponseDto> deleteTerms(@PathVariable("id") long termsId, final Locale locale) {
+        log.info("##### 이용약관 정보 삭제 기능 실행.");
+        TermsManagementResponseDto termsManagementResponseDto = this.termsManagementService.deleteTerms(termsId, locale);
         return this._getResponseEntity(termsManagementResponseDto);
     }
 

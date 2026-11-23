@@ -44,6 +44,13 @@
 			TERMS_ID = #{termsId}
 	</update>
 
+	<delete id="delete" parameterType="long">
+		/** TermsManagementMapper.delete */
+		DELETE FROM TERMS
+		WHERE
+			TERMS_ID = #{termsId}
+	</delete>
+
 	<insert id="saveUserTermsSearch" parameterType="Terms">
 		/** TermsManagementMapper.saveUserTermsSearch */
 		INSERT INTO TERMS_SEARCH (
