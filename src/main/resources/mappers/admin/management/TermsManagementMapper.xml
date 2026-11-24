@@ -51,7 +51,25 @@
 			TERMS_ID = #{termsId}
 	</delete>
 
-	<insert id="saveUserTermsSearch" parameterType="Terms">
+	<update id="patchUseYn" parameterType="Terms">
+		/** TermsManagementMapper.patchUseYn */
+		UPDATE TERMS
+		SET
+			USE_YN = #{useYn}
+		WHERE
+			TERMS_ID = #{termsId}
+	</update>
+
+	<update id="patchRequireYn" parameterType="Terms">
+		/** TermsManagementMapper.patchRequireYn */
+		UPDATE TERMS
+		SET
+			REQUIRE_YN = #{requireYn}
+		WHERE
+			TERMS_ID = #{termsId}
+	</update>
+
+	<insert id="saveUserTermsSearch" parameterType="long">
 		/** TermsManagementMapper.saveUserTermsSearch */
 		INSERT INTO TERMS_SEARCH (
 			TERMS_ID,
@@ -60,27 +78,34 @@
             CONTENT_TYPE,
             ORDER_NO,
 			REQUIRE_YN
-		) VALUES (
-			#{termsId},
-			#{title},
-			#{contents},
-			#{contentType},
-			#{orderNo},
-			#{requireYn}
 		)
-	</insert>
-
-	<update id="updateUserTermsSearch" parameterType="Terms">
-		/** TermsManagementMapper.updateUserTermsSearch */
-		UPDATE TERMS_SEARCH
-		SET
-			TITLE = #{title},
-            CONTENTS = #{contents},
-            CONTENT_TYPE = #{contentType},
-            ORDER_NO = #{orderNo},
-			REQUIRE_YN = #{requireYn}
+		SELECT
+			TERMS_ID,
+            TITLE,
+            CONTENTS,
+            CONTENT_TYPE,
+            ORDER_NO,
+			REQUIRE_YN
+		FROM
+			TERMS
 		WHERE
 			TERMS_ID = #{termsId}
+	</insert>
+
+	<update id="updateUserTermsSearch" parameterType="long">
+		/** TermsManagementMapper.updateUserTermsSearch */
+		UPDATE
+			TERMS_SEARCH TS,
+			TERMS T
+		SET
+			TS.TITLE = T.TITLE,
+			TS.CONTENTS = T.CONTENTS,
+			TS.CONTENT_TYPE = T.CONTENT_TYPE,
+			TS.ORDER_NO = T.ORDER_NO
+			TS.REQUIRE_YN = T.REQUIRE_YN
+		WHERE
+			TS.TERMS_ID = T.TERMS_ID
+			AND T.TERMS_ID = #{termsId}
 	</update>
 
 	<delete id="deleteUserTermsSearch" parameterType="long">
@@ -89,4 +114,13 @@
 		WHERE
 			TERMS_ID = #{termsId}
 	</delete>
+
+	<update id="patchUserTermsRequireYn" parameterType="Terms">
+		/** TermsManagementMapper.patchUserTermsRequireYn */
+		UPDATE TERMS_SEARCH
+		SET
+			REQUIRE_YN = #{requireYn}
+		WHERE
+			TERMS_ID = #{termsId}
+	</update>
 </mapper>

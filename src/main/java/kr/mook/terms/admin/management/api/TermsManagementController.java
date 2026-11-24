@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -64,10 +65,38 @@ public class TermsManagementController {
         return this._getResponseEntity(termsManagementResponseDto);
     }
 
+    /**
+     * 이용약관 정보 삭제를 위한 API
+     * 
+     * @param termsId 삭제할 이용약관 아이디
+     * @param locale 다국어 처리를 위한 언어 형식
+     * @return 이용약관 정보 삭제 결과 상태 코드 및 메시지 반환
+     */
     @DeleteMapping("/{id}")
     public ResponseEntity<TermsManagementResponseDto> deleteTerms(@PathVariable("id") long termsId, final Locale locale) {
         log.info("##### 이용약관 정보 삭제 기능 실행.");
         TermsManagementResponseDto termsManagementResponseDto = this.termsManagementService.deleteTerms(termsId, locale);
+        return this._getResponseEntity(termsManagementResponseDto);
+    }
+
+    /**
+     * 이용약관 정보 사용여부/필수여부 변경을 위한 API
+     * 
+     * @param termsId 변경할 이용약관 아이디
+     * @param field 변경할 필드명(컬럼명, USE / REQUIRE)
+     * @param value 변경할 값(Y / N)
+     * @param locale 다국어 처리를 위한 언어 형식
+     * @return
+     */
+    @PatchMapping("/{id}/{field}/{value}")
+    public ResponseEntity<TermsManagementResponseDto> changeStatus(
+        @PathVariable ("id") long termsId,
+        @PathVariable ("field") String field,
+        @PathVariable ("value") String value,
+        final Locale locale
+    ) {
+        log.info("##### 이용약관 정보 상태 변경 기능 실행.");
+        TermsManagementResponseDto termsManagementResponseDto = this.termsManagementService.changeStatus(termsId, field, value, locale);
         return this._getResponseEntity(termsManagementResponseDto);
     }
 

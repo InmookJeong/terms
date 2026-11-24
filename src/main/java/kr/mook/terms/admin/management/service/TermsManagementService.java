@@ -56,4 +56,20 @@ public interface TermsManagementService {
      * }<br/>
      */
     public TermsManagementResponseDto deleteTerms(final long termsId, final Locale locale);
+
+    /**
+     * 이용약관 상태 변경을 위한 서비스
+     * 
+     * @param termsId 상태 변경을 할 이용약관 정보 아이디
+     * @param field 변경할 상태 항목 : USE_YN / REQUIRE_YN
+     * @param value 변경할 상태값 : Y / N
+     * @param locale 다국어 처리를 위한 언어 형식
+     * @return 이용약관 상태 변경 결과 상태 코드 및 메시지<br/>
+     * {<br/>
+     *      &emsp;"statusCode" : "200",<br/>
+     *      &emsp;"message" : "이용약관의 {사용여부/필수여부} 상태를 변경하였습니다.",<br/>
+     *      &emsp;"termsId" : 1<br/>
+     * }<br/>
+     */
+    public TermsManagementResponseDto changeStatus(final long termsId, final String field, final String value, final Locale locale);
 }

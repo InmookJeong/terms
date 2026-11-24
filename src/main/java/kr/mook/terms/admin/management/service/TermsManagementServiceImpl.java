@@ -115,7 +115,7 @@ public class TermsManagementServiceImpl implements TermsManagementService {
      */
     @Transactional 
     @Override
-    public TermsManagementResponseDto deleteTerms(long termsId, Locale locale) {
+    public TermsManagementResponseDto deleteTerms(final long termsId, final Locale locale) {
         log.info("##### 관리자가 삭제한 termsId : {}", termsId);
         if(!this.termsSearchService.exists(termsId))
             return this._getErrorResponse("NOT-EXISTS", locale);
@@ -135,6 +135,29 @@ public class TermsManagementServiceImpl implements TermsManagementService {
     }
 
     /**
+     * 이용약관 상태 변경 서비스 구현
+     */
+    @Transactional
+    @Override
+    public TermsManagementResponseDto changeStatus(final long termsId, String field, String value, final Locale locale) {
+        log.info("##### 관리자가 변경한 termsId : {}, 상태 : {}, 값 : {}", termsId, field, value);
+        if(!this.termsSearchService.exists(termsId))
+            return this._getErrorResponse("NOT-EXISTS", locale);
+        
+        field = field.toUpperCase();
+        value = value.toUpperCase();
+        String statusCode = "TERMS-STATUS-" + field + "_YN";
+
+        // 이용약관 상태 변경
+        if("USE".equals(field))
+            this._patchUseYn(termsId, value);
+        else
+            this._patchRequireYn(termsId, value);
+
+        return this._getSuccessResponse(termsId, value, statusCode, locale);
+    }
+
+    /**
      * 사용자 조회용 이용약관 테이블에도 데이터 저장
      * 
      * @param terms
@@ -142,7 +165,7 @@ public class TermsManagementServiceImpl implements TermsManagementService {
     private void _saveUserTermsSearchHandler(final Terms terms) {
         // useYn이 Y인 경우에는 TERMS_SEARCH 테이블에도 저장
         if("Y".equals(terms.getUseYn()))
-            this.termsManagementMapper.saveUserTermsSearch(terms);
+            this.termsManagementMapper.saveUserTermsSearch(terms.getTermsId());
     }
 
     /**
@@ -156,7 +179,7 @@ public class TermsManagementServiceImpl implements TermsManagementService {
 
         // TERMS_SEARCH 테이블에 이미 저장되어 있고, 사용여부가 Y인 경우 TERMS_SEARCH에 데이터 수정
         if(hasTerms && useTerms)
-            this.termsManagementMapper.updateUserTermsSearch(terms);
+            this.termsManagementMapper.updateUserTermsSearch(terms.getTermsId());
         
         // TERMS_SEARCH 테이블에 이미 저장되어 있고, 사용여부가 N인 경우 TERMS_SEARCH에 데이터 삭제
         if(hasTerms && !useTerms)
@@ -164,7 +187,41 @@ public class TermsManagementServiceImpl implements TermsManagementService {
         
         // TERMS_SEARCH 테이블에 저장되어 있지 않고, 사용여부가 Y인 경우 TERMS_SEARCH에 데이터 저장
         if(!hasTerms && useTerms)
-            this.termsManagementMapper.saveUserTermsSearch(terms);
+            this.termsManagementMapper.saveUserTermsSearch(terms.getTermsId());
+    }
+
+    /**
+     * 이용약관 사용 여부 상태값 변경
+     * 
+     * @param termsId
+     * @param value
+     */
+    private void _patchUseYn(final long termsId, final String value) {
+        Terms terms = Terms.builder().termsId(termsId).useYn(value).build();
+
+        // 이용약관 사용여부 변경
+        this.termsManagementMapper.patchUseYn(terms);
+
+        // 사용여부에 따라 사용자 검색용 이용약관 테이블에 이용약관 정보 저장/삭제 처리
+        this._updateUserTermsSearchHandler(terms);
+    }
+
+    /**
+     * 이용약관 필수 여부 상태값 변경
+     * 
+     * @param termsId
+     * @param value
+     */
+    private void _patchRequireYn(final long termsId, final String value) {
+        Terms terms = Terms.builder().termsId(termsId).requireYn(value).build();
+
+        // 이용약관 필수여부 변경
+        this.termsManagementMapper.patchRequireYn(terms);
+
+        // 사용자 검색용 이용약관 테이블에 이용약관 정보가 있는 경우 필수 여부 업데이트
+        boolean hasTerms = this.termsSearchService.existsUserTermsSearch(terms.getTermsId());
+        if(hasTerms)
+            this.termsManagementMapper.patchUserTermsRequireYn(terms);
     }
 
     /**
@@ -205,13 +262,13 @@ public class TermsManagementServiceImpl implements TermsManagementService {
      * 저장/수정/삭제 성공에 대한 결과 반환
      * 
      * @param termsId 저장/수정 성공한 이용약관 아이디. 삭제의 경우 0이 전달됨
-     * @param title 이용약관 제목
+     * @param value 이용약관 제목(저장/수정) 또는 상태값(상태변경)
      * @param statusCode 저장/수정/삭제 상태 코드
      * @param locale 다국어 처리를 위한 언어 형식
      * @return 저장/수정/삭제 성공에 대한 결과 반환
      */
-    private TermsManagementResponseDto _getSuccessResponse(final long termsId, final String title, final String statusCode, final Locale locale) {
-        String message = this.messageSource.getMessage(statusCode, new String[] {title}, locale);
+    private TermsManagementResponseDto _getSuccessResponse(final long termsId, final String value, final String statusCode, final Locale locale) {
+        String message = this.messageSource.getMessage(statusCode, new String[] {value}, locale);
         return TermsResponseMaker.getSuccessResponse(termsId, message, locale);
     }
 
