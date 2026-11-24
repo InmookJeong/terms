@@ -204,6 +204,9 @@ public class TermsManagementServiceImpl implements TermsManagementService {
 
         // 사용여부에 따라 사용자 검색용 이용약관 테이블에 이용약관 정보 저장/삭제 처리
         this._updateUserTermsSearchHandler(terms);
+
+        // 이용약관 사용여부 변경 성공 결과 외부 전송
+        this._termsEventPublisher(terms, this._UPDATE_PUBLISH_STATUS);
     }
 
     /**
@@ -222,6 +225,9 @@ public class TermsManagementServiceImpl implements TermsManagementService {
         boolean hasTerms = this.termsSearchService.existsUserTermsSearch(terms.getTermsId());
         if(hasTerms)
             this.termsManagementMapper.patchUserTermsRequireYn(terms);
+
+        // 이용약관 필수여부 변경 성공 결과 외부 전송
+        this._termsEventPublisher(terms, this._UPDATE_PUBLISH_STATUS);
     }
 
     /**
