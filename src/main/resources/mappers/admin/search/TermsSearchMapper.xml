@@ -55,4 +55,24 @@
             ]]>
             </if>
 	</select>
+
+	<select id="get" parameterType="long" resultType="Terms">
+		/** TermsSearchMapper.get */
+		SELECT
+            TERMS_ID,
+            TITLE,
+            CONTENTS,
+            CONTENT_TYPE,
+            ORDER_NO,
+            USE_YN,
+            REQUIRE_YN,
+            CREATE_ID,
+            CREATE_DATE,
+            UPDATE_ID,
+            UPDATE_DATE
+        FROM
+            TERMS
+        WHERE
+            TERMS_ID = #{termsId}
+	</select>
 </mapper>

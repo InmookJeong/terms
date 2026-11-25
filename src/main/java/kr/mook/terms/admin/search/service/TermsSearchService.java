@@ -1,5 +1,9 @@
 package kr.mook.terms.admin.search.service;
 
+import java.util.Locale;
+
+import kr.mook.terms.admin.search.dto.TermsSearchResponseDto;
+
 /**
  * 관리자용 이용약관 조회를 위한 서비스
  * 
@@ -47,4 +51,6 @@ public interface TermsSearchService {
      */
     public boolean duplicateOrderNo(final int orderNo, final long termsId);
 
+    
+    public TermsSearchResponseDto detail(final long termsId, final Locale locale);
 }

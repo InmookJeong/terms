@@ -4,6 +4,8 @@ import java.util.HashMap;
 
 import org.apache.ibatis.annotations.Mapper;
 
+import kr.mook.terms.common.entity.Terms;
+
 /**
  * 관리자용 이용약관 정보 조회를 위한 영속성 구현
  * 
@@ -45,5 +47,13 @@ public interface TermsSearchMapper {
      * @return
      */
     public int countByOrderNo(final HashMap<String, Object> termsMap);
+
+    /**
+     * 이용약관 아이디를 이용하여 이용약관 상세 정보 조회
+     * 
+     * @param termsId 조회 대상 이용약관 아이디
+     * @return
+     */
+    public Terms get(final long termsId);
 
 }
