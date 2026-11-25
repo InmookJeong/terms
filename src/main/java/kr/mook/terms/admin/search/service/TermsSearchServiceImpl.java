@@ -6,7 +6,6 @@ import java.util.Locale;
 import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Service;
 
-import kr.mook.terms.admin.management.util.TermsResponseMaker;
 import kr.mook.terms.admin.search.dto.TermsSearchResponseDto;
 import kr.mook.terms.admin.search.persistence.TermsSearchMapper;
 import lombok.RequiredArgsConstructor;

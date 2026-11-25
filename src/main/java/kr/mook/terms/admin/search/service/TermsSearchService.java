@@ -51,6 +51,14 @@ public interface TermsSearchService {
      */
     public boolean duplicateOrderNo(final int orderNo, final long termsId);
 
-    
+    /**
+     * 이용약관 아이디를 통한 이용약관 정보 상세 조회<br/>
+     * 이용약관 아이디가 저장되어 있지 않으면 오류 메시지 반환<br/>
+     * 이용약관 아이디가 저장되어 있으면 상세 정보 반환<br/>
+     * 
+     * @param termsId 조회 대상 이용약관 아이디
+     * @param locale 다국어 처리를 위한 언어 형식
+     * @return
+     */
     public TermsSearchResponseDto detail(final long termsId, final Locale locale);
 }
