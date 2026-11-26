@@ -75,4 +75,38 @@
         WHERE
             TERMS_ID = #{termsId}
 	</select>
+
+	<select id="list" parameterType="Terms" resultType="Terms">
+		/** TermsSearchMapper.list */
+		SELECT
+            TERMS_ID,
+            TITLE,
+            CONTENTS,
+            CONTENT_TYPE,
+            ORDER_NO,
+            USE_YN,
+            REQUIRE_YN,
+            CREATE_ID,
+            CREATE_DATE,
+            UPDATE_ID,
+            UPDATE_DATE
+        FROM
+            TERMS
+        WHERE
+            1=1
+            <if test='title != null and title !=""'>
+            AND TITLE LIKE CONCAT('%', #{title}, '%')
+            </if>
+            <if test='contentType != null and contentType !=""'>
+            AND CONTENT_TYPE = #{contentType}
+            </if>
+            <if test='useYn != null and useYn !=""'>
+            AND USE_YN = #{useYn}
+            </if>
+            <if test='requireYn != null and requireYn !=""'>
+            AND REQUIRE_YN = #{requireYn}
+            </if>
+        ORDER BY
+            CREATE_DATE DESC
+	</select>
 </mapper>

@@ -1,13 +1,17 @@
 package kr.mook.terms.admin.search.service;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 
 import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Service;
 
+import kr.mook.terms.admin.search.dto.TermsSearchRequestDto;
 import kr.mook.terms.admin.search.dto.TermsSearchResponseDto;
 import kr.mook.terms.admin.search.persistence.TermsSearchMapper;
+import kr.mook.terms.common.entity.Terms;
+import kr.mook.terms.common.util.TermsConverter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -81,7 +85,32 @@ public class TermsSearchServiceImpl implements TermsSearchService {
         termsSearchResponseDto.setStatusCode("200");
         termsSearchResponseDto.setMessage(message);
         termsSearchResponseDto.setCount(1);
-        termsSearchResponseDto.setResult(this.termsSearchMapper.get(termsId));        
+        termsSearchResponseDto.setResult(this.termsSearchMapper.get(termsId));
+        return termsSearchResponseDto;
+    }
+
+    /**
+     * 조회 조건을 통한 이용약관 목록 조회
+     */
+    @Override
+    public TermsSearchResponseDto list(final TermsSearchRequestDto termsSearchRequestDto, final Locale locale) {
+        Terms terms = TermsConverter.toTerms(termsSearchRequestDto);
+        List<Terms> termsList = this.termsSearchMapper.list(terms);
+
+        TermsSearchResponseDto termsSearchResponseDto = TermsSearchResponseDto.builder().build();
+        if(termsList.size() == 0) {
+            String message = this.messageSource.getMessage("ERROR-TERMS-NOT-EXISTS", null, locale);
+            termsSearchResponseDto.setStatusCode("400");
+            termsSearchResponseDto.setMessage(message);
+            return termsSearchResponseDto;
+        }
+
+        int listSize = termsList.size();
+        String message = this.messageSource.getMessage("TERMS-SEARCH-LIST", new String[] {String.valueOf(listSize)}, locale);
+        termsSearchResponseDto.setStatusCode("200");
+        termsSearchResponseDto.setMessage(message);
+        termsSearchResponseDto.setCount(listSize);
+        termsSearchResponseDto.setResult(termsList);
         return termsSearchResponseDto;
     }
 }

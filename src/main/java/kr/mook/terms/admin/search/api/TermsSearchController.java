@@ -7,12 +7,15 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
+import kr.mook.terms.admin.search.dto.TermsSearchRequestDto;
 import kr.mook.terms.admin.search.dto.TermsSearchResponseDto;
 import kr.mook.terms.admin.search.service.TermsSearchService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 
 
 /**
@@ -35,6 +38,13 @@ public class TermsSearchController {
     public ResponseEntity<TermsSearchResponseDto> detail(@PathVariable("id") long termsId, final Locale locale) {
         log.info("##### 이용약관 조회 기능 실행. 조회 대상 이용약관 아이디 : {}", termsId);
         TermsSearchResponseDto termsSearchResponseDto = this.termsSearchService.detail(termsId, locale);
+        return this._getResponseEntity(termsSearchResponseDto);
+    }
+
+    @PostMapping
+    public ResponseEntity<TermsSearchResponseDto> list(@RequestBody TermsSearchRequestDto termsSearchRequestDto, final Locale locale) {
+        log.info("##### 이용약관 목록 조회 실행. 조회 조건 : {}", termsSearchRequestDto);
+        TermsSearchResponseDto termsSearchResponseDto = this.termsSearchService.list(termsSearchRequestDto, locale);
         return this._getResponseEntity(termsSearchResponseDto);
     }
 

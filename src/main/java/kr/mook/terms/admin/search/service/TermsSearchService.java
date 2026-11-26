@@ -2,6 +2,7 @@ package kr.mook.terms.admin.search.service;
 
 import java.util.Locale;
 
+import kr.mook.terms.admin.search.dto.TermsSearchRequestDto;
 import kr.mook.terms.admin.search.dto.TermsSearchResponseDto;
 
 /**
@@ -61,4 +62,14 @@ public interface TermsSearchService {
      * @return
      */
     public TermsSearchResponseDto detail(final long termsId, final Locale locale);
+
+    /**
+     * 이용약관 목록 조회<br/>
+     * 이용약관 제목, 내용 유형, 사용여부, 필수여부 조건을 이용하여 저장된 이용약관 목록을 출력<br/>
+     * 
+     * @param termsSearchRequestDto 이용약관 목록 조회를 위한 조건 값을 전달하는 객체(제목, 내용 유형, 사용여부, 필수여부)
+     * @param locale 다국어 처리를 위한 언어 형식
+     * @return
+     */
+    public TermsSearchResponseDto list(final TermsSearchRequestDto termsSearchRequestDto, final Locale locale);
 }

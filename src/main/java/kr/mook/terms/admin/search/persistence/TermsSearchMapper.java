@@ -1,6 +1,7 @@
 package kr.mook.terms.admin.search.persistence;
 
 import java.util.HashMap;
+import java.util.List;
 
 import org.apache.ibatis.annotations.Mapper;
 
@@ -55,5 +56,13 @@ public interface TermsSearchMapper {
      * @return
      */
     public Terms get(final long termsId);
+
+    /**
+     * 이용약관 조회 조건을 이용하여 이용약관 목록 조회
+     * 
+     * @param terms 조회 조건을 전달하기 위한 객체
+     * @return
+     */
+    public List<Terms> list(final Terms terms);
 
 }
